@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, GraduationCap, BookOpen, Link, CheckCircle, AlertTriangle, Clock, User, Mail, Phone, Activity, CreditCard } from 'lucide-react';
+import { ArrowLeft, GraduationCap, BookOpen, Link, CheckCircle, AlertTriangle, Clock, User, Mail, Phone, Activity, CreditCard, MessageCircle } from 'lucide-react';
 import { MOCK_STUDENTS } from './StudentPanel';
 import { MOCK_EMIS } from '../Payments/PaymentPanel';
 import { cn } from '../../components/layout/Sidebar';
@@ -15,6 +15,22 @@ export default function StudentProfile() {
   if (!student) {
     return <div className="p-8 text-center text-gray-500 font-medium">Student not found</div>;
   }
+
+  const handleCall = () => {
+    window.location.href = `tel:${student.id}`; // In mock, student.id has numbers
+    addNotification(`Calling ${student.name}...`, "info");
+  };
+
+  const handleEmail = () => {
+    window.location.href = `mailto:${student.name.toLowerCase().replace(' ', '.')}@example.com`;
+    addNotification(`Opening email to ${student.name}...`, "info");
+  };
+
+  const handleWhatsApp = () => {
+    const cleanPhone = student.id.replace(/[^0-9]/g, ''); // Mock fallback
+    window.open(`https://wa.me/91${cleanPhone || '9999999999'}`, '_blank');
+    addNotification("Opening WhatsApp...", "success");
+  };
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-10">
@@ -91,9 +107,27 @@ export default function StudentProfile() {
             </div>
 
             <div className="mt-8 pt-6 border-t border-gray-100">
-              <button className="w-full py-3 bg-gray-900 hover:bg-black text-white rounded-2xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-gray-200">
-                Contact Graduate
-              </button>
+              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 ml-1">Quick Reach</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={handleCall}
+                  className="flex items-center justify-center gap-2 py-3 bg-gray-50 hover:bg-emerald-50 hover:text-emerald-600 text-gray-700 rounded-2xl text-xs font-bold transition-all active:scale-95"
+                >
+                  <Phone className="w-3.5 h-3.5" /> Call
+                </button>
+                <button 
+                  onClick={handleEmail}
+                  className="flex items-center justify-center gap-2 py-3 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 rounded-2xl text-xs font-bold transition-all active:scale-95"
+                >
+                  <Mail className="w-3.5 h-3.5" /> Email
+                </button>
+                <button 
+                  onClick={handleWhatsApp}
+                  className="col-span-2 flex items-center justify-center gap-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-bold transition-all active:scale-95 shadow-lg shadow-emerald-500/10"
+                >
+                  <MessageCircle className="w-4 h-4" /> Message via WhatsApp
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -135,7 +169,7 @@ export default function StudentProfile() {
                         <Clock className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900">${emi.amount} - {emi.status}</p>
+                        <p className="font-bold text-gray-900">₹{emi.amount} - {emi.status}</p>
                         <p className="text-xs text-gray-500">Scheduled for {emi.dueDate}</p>
                       </div>
                     </div>

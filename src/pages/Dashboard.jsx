@@ -33,14 +33,14 @@ export default function Dashboard() {
     switch (role) {
       case 'Admin':
         return [
-          { title: 'Total Revenue', value: '$124,500', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { title: 'Total Revenue', value: '₹124,500', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { title: 'Pending EMI', value: '42 Overdue', icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
           { title: 'Active Students', value: '1,204', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
           { title: 'Payment Approvals pending', value: '12', icon: CreditCard, color: 'text-amber-600', bg: 'bg-amber-50' }
         ];
       case 'Manager':
         return [
-          { title: 'Team Revenue', value: '$45,200', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { title: 'Team Revenue', value: '₹45,200', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
           { title: 'Conversion Rate', value: '12.4%', icon: Target, color: 'text-indigo-600', bg: 'bg-indigo-50' },
           { title: 'Team Leads', value: '342', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' }
         ];
@@ -49,7 +49,7 @@ export default function Dashboard() {
         return [
           { title: 'My Leads', value: '45', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
           { title: 'Follow-ups due', value: '8', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { title: 'My Revenue', value: '$4,500', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' }
+          { title: 'My Revenue', value: '₹4,500', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' }
         ];
     }
   };
@@ -93,6 +93,7 @@ export default function Dashboard() {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dx={-10} />
                   <Tooltip 
+                    formatter={(value, name) => [name === 'revenue' ? `₹${value}` : value, name === 'revenue' ? 'Revenue' : 'Leads']}
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                     cursor={{stroke: '#e2e8f0', strokeWidth: 2, strokeDasharray: '5 5'}}
                   />

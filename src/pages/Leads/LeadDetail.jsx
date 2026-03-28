@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { MOCK_LEADS, LEAD_STAGES } from '../../utils/mockData';
-import { ArrowLeft, UserCircle2, Phone, Mail, BookOpen, Clock, Activity, CheckCircle2, AlertCircle, X, UserPlus } from 'lucide-react';
+import { ArrowLeft, UserCircle2, Phone, Mail, BookOpen, Clock, Activity, CheckCircle2, AlertCircle, X, UserPlus, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import CanDo from '../../components/auth/CanDo';
 import useAuthStore, { MOCK_USERS } from '../../store/useAuthStore';
@@ -14,6 +14,8 @@ export default function LeadDetail() {
   const leadInitial = MOCK_LEADS.find(l => l.id === id);
   const [lead, setLead] = useState(leadInitial);
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [noteText, setNoteText] = useState('');
   const user = useAuthStore(state => state.user);
   const addNotification = useNotificationStore(state => state.addNotification);
 
@@ -85,6 +87,24 @@ export default function LeadDetail() {
     addNotification("Opening email client...", "info");
   };
 
+  const handleWhatsApp = () => {
+    const cleanPhone = lead.phone.replace(/[^0-9]/g, '');
+    window.open(`https://wa.me/${cleanPhone}`, '_blank');
+    const newActivity = {
+      id: Date.now(),
+      type: 'whatsapp',
+      text: `WhatsApp message initiated to ${lead.phone}`,
+      user: user.email,
+      date: new Date().toISOString()
+    };
+    setLead(prev => ({
+      ...prev,
+      activities: [newActivity, ...prev.activities],
+      lastActivity: new Date().toISOString()
+    }));
+    addNotification("Opening WhatsApp...", "success");
+  };
+
   const handleReassign = (newUserEmail) => {
     const newActivity = {
       id: Date.now(),
@@ -101,6 +121,32 @@ export default function LeadDetail() {
     }));
     setIsReassignModalOpen(false);
     addNotification(`Lead successfully reassigned to ${newUserEmail}`, "success");
+  };
+
+  const handleAddNote = (e) => {
+    e.preventDefault();
+    if (!noteText.trim()) {
+      addNotification("Note cannot be empty", "error");
+      return;
+    }
+
+    const newActivity = {
+      id: Date.now(),
+      type: 'note',
+      text: noteText,
+      user: user.email,
+      date: new Date().toISOString()
+    };
+
+    setLead(prev => ({
+      ...prev,
+      activities: [newActivity, ...prev.activities],
+      lastActivity: new Date().toISOString()
+    }));
+
+    setNoteText('');
+    setIsNoteModalOpen(false);
+    addNotification("Note added to timeline", "success");
   };
 
   return (
@@ -144,6 +190,38 @@ export default function LeadDetail() {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Note Modal */}
+      {isNoteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsNoteModalOpen(false)}></div>
+          <div className="bg-white rounded-3xl p-8 max-w-lg w-full relative z-10 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Add Internal Note</h2>
+              <button onClick={() => setIsNoteModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            <form onSubmit={handleAddNote} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Note Content</label>
+                <textarea 
+                  autoFocus
+                  required
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="Type your observations here..."
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 min-h-[150px] resize-none text-sm leading-relaxed"
+                />
+              </div>
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setIsNoteModalOpen(false)} className="flex-1 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 rounded-xl transition-colors">Cancel</button>
+                <button type="submit" className="flex-1 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95">Save Note</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -215,6 +293,12 @@ export default function LeadDetail() {
                 >
                   <Mail className="w-4 h-4" /> Email
                 </button>
+                <button 
+                  onClick={handleWhatsApp}
+                  className="col-span-2 flex justify-center items-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-all active:scale-95 shadow-md shadow-emerald-500/10"
+                >
+                  <MessageCircle className="w-4 h-4" /> WhatsApp
+                </button>
                 <CanDo allowedRoles={['Manager', 'Admin']} disableOnly>
                   <button 
                     onClick={() => setIsReassignModalOpen(true)}
@@ -285,17 +369,28 @@ export default function LeadDetail() {
                 <Activity className="w-5 h-5 text-gray-400" />
                 Audit & Activity Timeline
               </h3>
-              <button className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">
-                + Add Note
-              </button>
+                <button 
+                  onClick={() => setIsNoteModalOpen(true)}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  + Add Note
+                </button>
             </div>
             
             <div className="space-y-6 pl-2 text-left">
               {lead.activities.map((activity, idx) => (
                 <div key={activity.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:bottom-[-24px] before:w-px before:bg-gray-200 last:before:hidden">
                   <div className="absolute left-[-4px] top-1.5 w-2 h-2 rounded-full ring-4 ring-white bg-blue-500"></div>
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 relative">
-                    <p className="text-sm text-gray-900 font-medium">{activity.text}</p>
+                  <div className={cn(
+                    "bg-gray-50 rounded-xl p-4 border border-gray-100 relative shadow-sm",
+                    activity.type === 'note' && "bg-amber-50/50 border-amber-100 ring-2 ring-amber-50"
+                  )}>
+                    {activity.type === 'note' && (
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-2">
+                        <Activity className="w-3 h-3" /> Internal Note
+                      </div>
+                    )}
+                    <p className="text-sm text-gray-900 font-medium leading-relaxed">{activity.text}</p>
                     <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                       <span className="flex items-center gap-1">
                         <UserCircle2 className="w-3.5 h-3.5" /> {activity.user}
