@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MOCK_LEADS } from '../../utils/mockData';
-import { Search, Filter, AlertCircle, ChevronRight, FileSpreadsheet, Upload, X, FileUp, CheckCircle2 } from 'lucide-react';
-import useAuthStore from '../../store/useAuthStore';
+import { Search, Filter, AlertCircle, ChevronRight, FileSpreadsheet, Upload, X, FileUp, CheckCircle2, UserPlus } from 'lucide-react';
+import useAuthStore, { MOCK_USERS } from '../../store/useAuthStore';
 import useNotificationStore from '../../store/useNotificationStore';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '../../components/layout/Sidebar';
@@ -36,6 +36,8 @@ export default function LeadList() {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assigningLead, setAssigningLead] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [newLead, setNewLead] = useState({ name: '', email: '', phone: '', course: 'Full Stack Development' });
   const [bulkData, setBulkData] = useState('');
@@ -128,6 +130,13 @@ export default function LeadList() {
       addNotification(`File "${file.name}" loaded successfully`, "info");
     };
     reader.readAsText(file);
+  };
+
+  const handleAssign = (userEmail) => {
+    // In a real app, this would be an API call
+    addNotification(`Lead ${assigningLead.name} assigned to ${userEmail}`, "success");
+    setIsAssignModalOpen(false);
+    setAssigningLead(null);
   };
 
   return (
@@ -298,6 +307,52 @@ export default function LeadList() {
         </div>
       )}
 
+      {/* Quick Assign Modal */}
+      {isAssignModalOpen && assigningLead && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 text-left">
+          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsAssignModalOpen(false)}></div>
+          <div className="bg-white rounded-3xl p-8 max-w-md w-full relative z-10 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Assign Lead</h2>
+                <p className="text-sm text-gray-500 mt-1">{assigningLead.name} ({assigningLead.id})</p>
+              </div>
+              <button onClick={() => setIsAssignModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Available Associates</p>
+              {Object.values(MOCK_USERS).filter(u => u.role === 'Associate' || u.role === 'Manager').map(u => (
+                <button
+                  key={u.email}
+                  onClick={() => handleAssign(u.email)}
+                  disabled={u.email === assigningLead.assignedTo}
+                  className={cn(
+                    "w-full flex items-center gap-4 p-4 rounded-2xl border transition-all text-left",
+                    u.email === assigningLead.assignedTo
+                      ? "bg-gray-50 border-gray-100 cursor-not-allowed opacity-60"
+                      : "bg-white border-gray-200 hover:border-blue-500 hover:bg-blue-50/50 active:scale-[0.98]"
+                  )}
+                >
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">
+                    {u.name.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-900">{u.name}</p>
+                    <p className="text-xs text-gray-500">{u.role} • {u.email}</p>
+                  </div>
+                  {u.email === assigningLead.assignedTo && (
+                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">CURRENT</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Leads Management</h1>
@@ -415,7 +470,22 @@ export default function LeadList() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 inline-block transition-transform group-hover:translate-x-1" />
+                      <div className="flex items-center justify-end gap-2">
+                        {(role === 'Manager' || role === 'Admin') && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAssigningLead(lead);
+                              setIsAssignModalOpen(true);
+                            }}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            title="Assign Lead"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                          </button>
+                        )}
+                        <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-transform group-hover:translate-x-1" />
+                      </div>
                     </td>
                   </tr>
                 ))

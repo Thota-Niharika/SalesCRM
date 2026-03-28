@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, AlertTriangle, GraduationCap, Link } from 'lucide-react';
-import { MOCK_EMIS } from '../Payments/PaymentPanel';
+import { BookOpen, AlertTriangle, GraduationCap, Link, ChevronRight, UserCircle2, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { MOCK_EMIS } from '../../utils/mockData';
 import { cn } from '../../components/layout/Sidebar';
 
 export const MOCK_STUDENTS = [
@@ -23,66 +23,82 @@ export default function StudentPanel() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {MOCK_STUDENTS.map((student) => {
-          // Check for EMI issues
-          const studentEmi = MOCK_EMIS.find(e => e.student === student.name && e.status === 'Overdue');
-
-          return (
-            <div key={student.id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all relative">
-              {studentEmi && (
-                <div className="absolute -top-3 -right-3 bg-rose-100 text-rose-700 px-3 py-1 text-xs font-bold rounded-full border border-rose-200 flex items-center gap-1 shadow-sm">
-                  <AlertTriangle className="w-3.5 h-3.5" /> EMI Overdue
-                </div>
-              )}
-              
-              <div className="flex items-center gap-4 mb-5">
-                <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold border border-indigo-100">
-                  {student.name.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">{student.name}</h3>
-                  <p className="text-xs text-gray-500">{student.id}</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-gray-500">
-                    <BookOpen className="w-4 h-4" /> Course
-                  </span>
-                  <span className="font-medium text-gray-900">{student.course}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-gray-500">
-                    <GraduationCap className="w-4 h-4" /> LMS Access
-                  </span>
-                  <span className={cn(
-                    "px-2 py-0.5 rounded text-xs font-semibold",
-                    student.lmsAccess ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                  )}>
-                    {student.lmsAccess ? 'Active' : 'Missing'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 text-gray-500">
-                    <Link className="w-4 h-4" /> Commitments
-                  </span>
-                  <span className="font-medium text-gray-700">{student.commitments}</span>
-                </div>
-              </div>
-
-              <div className="mt-5 pt-4 border-t border-gray-100 uppercase tracking-widest text-[10px]">
-                <button 
-                  onClick={() => navigate(`/students/${student.id}`)}
-                  className="w-full py-3 bg-gray-50 hover:bg-indigo-50 hover:text-indigo-600 text-gray-700 rounded-xl text-sm font-bold transition-all active:scale-95"
-                >
-                  View Full Profile
-                </button>
-              </div>
-            </div>
-          );
-        })}
+      <div className="bg-white border border-gray-200 rounded-3xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-gray-600">
+            <thead className="bg-gray-50/80 text-gray-500 text-[10px] uppercase font-bold tracking-widest border-b border-gray-200">
+              <tr>
+                <th className="px-8 py-5">Student</th>
+                <th className="px-6 py-5">Enrollment</th>
+                <th className="px-6 py-5 text-center">LMS Status</th>
+                <th className="px-6 py-5 text-center">EMI Health</th>
+                <th className="px-8 py-5 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 italic-row-hover">
+              {MOCK_STUDENTS.map((student) => {
+                const studentEmi = MOCK_EMIS.find(e => e.student === student.name && e.status === 'Overdue');
+                
+                return (
+                  <tr 
+                    key={student.id} 
+                    onClick={() => navigate(`/students/${student.id}`)}
+                    className="group hover:bg-gray-50/80 transition-all cursor-pointer"
+                  >
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-sm border border-indigo-100 group-hover:scale-110 transition-transform shadow-sm">
+                          {student.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">{student.name}</p>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{student.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="font-medium text-gray-700">{student.course}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <div className="flex justify-center">
+                        <span className={cn(
+                          "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5",
+                          student.lmsAccess ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                        )}>
+                          {student.lmsAccess ? <ShieldCheck className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
+                          {student.lmsAccess ? 'Active' : 'Missing'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <div className="flex justify-center">
+                        {studentEmi ? (
+                          <span className="bg-rose-100 text-rose-700 px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border border-rose-200 flex items-center gap-1.5 animate-pulse">
+                            <AlertTriangle className="w-3 h-3" /> Overdue
+                          </span>
+                        ) : (
+                          <span className="bg-gray-50 text-gray-400 px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full border border-gray-100 flex items-center gap-1.5 opacity-60">
+                            Clear
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 text-right">
+                       <button 
+                        className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-white rounded-xl transition-all shadow-none hover:shadow-lg hover:shadow-indigo-100"
+                      >
+                        <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
