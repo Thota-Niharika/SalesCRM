@@ -95,3 +95,12 @@ export const MOCK_TASKS = [
     relatedTo: 'Sarah Connor'
   }
 ];
+
+export const MOCK_EMIS = [
+  { id: 'E-01', student: 'Sarah Connor', amount: 45000, dueDate: '2026-03-20', status: 'Overdue' },
+  { id: 'E-02', student: 'John Connor', amount: 25000, dueDate: '2026-03-30', status: 'Pending' },
+  { id: 'E-03', student: 'Kyle Reese', amount: 15000, dueDate: '2026-03-15', status: 'Paid' },
+  { id: 'E-04', student: 'Sarah Connor', amount: 45000, dueDate: '2026-04-20', status: 'Pending' },
+  { id: 'E-05', student: 'John Connor', amount: 25000, dueDate: '2026-04-30', status: 'Pending' },
+  { id: 'E-06', student: 'Kyle Reese', amount: 15000, dueDate: '2026-04-15', status: 'Paid' },
+];

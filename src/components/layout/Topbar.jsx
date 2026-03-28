@@ -1,14 +1,20 @@
 import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import useAuthStore from '../../store/useAuthStore';
 import useAttendanceStore from '../../store/useAttendanceStore';
 import useNotificationStore from '../../store/useNotificationStore';
-import { Bell, LogOut, User, MapPin, Coffee, PlaySquare, CheckSquare } from 'lucide-react';
+import useUIStore from '../../store/useUIStore';
+import { Bell, LogOut, User, MapPin, Coffee, PlaySquare, CheckSquare, X } from 'lucide-react';
 import { cn } from './Sidebar';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function Topbar() {
   const { user, logout } = useAuthStore();
   const { isPunchedIn, isOnBreak, inOfficeRadius, punchIn, punchOut, toggleBreak } = useAttendanceStore();
-  const { unreadCount } = useNotificationStore();
+  const { notifications, unreadCount, markAllAsRead } = useNotificationStore();
+  const { toggleProfileSidebar } = useUIStore();
+  const [isNotificationsOpen, setIsNotificationsOpen] = React.useState(false);
+  const navigate = useNavigate();
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm z-20 sticky top-0">
@@ -66,12 +72,64 @@ export default function Topbar() {
         </div>
 
         {/* Notifications */}
-        <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100">
-          <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white animate-pulse" />
+        <div className="relative">
+          <button 
+            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+            className={cn(
+              "relative p-2 transition-colors rounded-full hover:bg-gray-100",
+              isNotificationsOpen ? "bg-gray-100 text-gray-900" : "text-gray-400 hover:text-gray-600"
+            )}
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white animate-pulse" />
+            )}
+          </button>
+
+          {isNotificationsOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)}></div>
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200 origin-top-right">
+                <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-t-2xl">
+                  <h3 className="font-bold text-gray-900">Notifications</h3>
+                  <button 
+                    onClick={() => { markAllAsRead(); setIsNotificationsOpen(false); }}
+                    className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-indigo-700 transition-colors"
+                  >
+                    Mark all read
+                  </button>
+                </div>
+                <div className="max-h-[320px] overflow-y-auto scrollbar-hide py-2">
+                  {notifications.length === 0 ? (
+                    <div className="py-12 text-center text-gray-400">
+                      <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                      <p className="text-xs font-medium">No notifications yet</p>
+                    </div>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n.id} className={cn(
+                        "px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer border-l-2",
+                        n.read ? "border-transparent opacity-60" : "border-indigo-600 bg-indigo-50/30"
+                      )}>
+                        <p className={cn("text-sm leading-tight mb-1", n.read ? "text-gray-600" : "font-bold text-gray-900")}>
+                          {n.message}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-medium">
+                          {formatDistanceToNow(new Date(n.timestamp), { addSuffix: true })}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="p-2 border-t border-gray-100 text-center">
+                  <button className="text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors py-1">
+                    View all history
+                  </button>
+                </div>
+              </div>
+            </>
           )}
-        </button>
+        </div>
 
         {/* User Profile */}
         <div className="flex items-center gap-3 pl-2 group cursor-pointer relative">
@@ -87,6 +145,15 @@ export default function Topbar() {
             <div className="p-2 border-b border-gray-100">
               <p className="text-xs text-gray-500 font-medium px-2 pb-1">Account</p>
               <p className="text-sm font-medium text-gray-900 px-2 truncate">{user?.email}</p>
+            </div>
+            <div className="p-1">
+              <button 
+                onClick={() => { toggleProfileSidebar(); }}
+                className="w-full flex items-center gap-2 px-2 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <User className="w-4 h-4" />
+                My Profile
+              </button>
             </div>
             <div className="p-1">
               <button 

@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import ProfileSidebar from '../profile/ProfileSidebar';
 import useAuthStore from '../../store/useAuthStore';
 
 export default function AppLayout() {
@@ -20,6 +21,7 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <ProfileSidebar />
     </div>
   );
 }

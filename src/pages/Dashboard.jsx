@@ -8,6 +8,7 @@ import {
   Target
 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { MOCK_EMIS, MOCK_LEADS } from '../utils/mockData';
 
 const data = [
   { name: 'Mon', revenue: 4000, leads: 24 },
@@ -28,15 +29,23 @@ export default function Dashboard() {
     setIsClient(true);
   }, []);
 
+  const revenueStats = {
+    totalCollected: MOCK_EMIS.filter(e => e.status === 'Paid').reduce((sum, e) => sum + e.amount, 0),
+    totalOverdue: MOCK_EMIS.filter(e => e.status === 'Overdue').reduce((sum, e) => sum + e.amount, 0),
+    overdueCount: MOCK_EMIS.filter(e => e.status === 'Overdue').length,
+    pendingApproval: MOCK_EMIS.filter(e => e.status === 'Pending').length,
+    activeStudents: MOCK_LEADS.filter(l => l.stage === 'Converted').length + 1200 // Mocked offset
+  };
+
   const getMetrics = () => {
     // ... same as before ...
     switch (role) {
       case 'Admin':
         return [
-          { title: 'Total Revenue', value: '₹124,500', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { title: 'Pending EMI', value: '42 Overdue', icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
-          { title: 'Active Students', value: '1,204', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { title: 'Payment Approvals pending', value: '12', icon: CreditCard, color: 'text-amber-600', bg: 'bg-amber-50' }
+          { title: 'Total Revenue', value: `₹${revenueStats.totalCollected.toLocaleString()}`, icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { title: 'Overdue EMI', value: `₹${revenueStats.totalOverdue.toLocaleString()} (${revenueStats.overdueCount})`, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
+          { title: 'Active Students', value: revenueStats.activeStudents.toLocaleString(), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { title: 'Approvals pending', value: revenueStats.pendingApproval.toString(), icon: CreditCard, color: 'text-amber-600', bg: 'bg-amber-50' }
         ];
       case 'Manager':
         return [

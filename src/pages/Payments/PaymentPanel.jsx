@@ -4,18 +4,12 @@ import { CreditCard, CheckCircle, AlertOctagon, Clock, DollarSign, X, User, Cale
 import { cn } from '../../components/layout/Sidebar';
 import CanDo from '../../components/auth/CanDo';
 import useNotificationStore from '../../store/useNotificationStore';
-import { MOCK_LEADS } from '../../utils/mockData';
-
-export const MOCK_EMIS = [
-  { id: 'E-01', student: 'Sarah Connor', amount: 500, dueDate: '2026-03-20', status: 'Overdue' },
-  { id: 'E-02', student: 'John Connor', amount: 500, dueDate: '2026-03-30', status: 'Pending' },
-  { id: 'E-03', student: 'Kyle Reese', amount: 1000, dueDate: '2026-03-15', status: 'Paid' },
-];
+import { MOCK_LEADS, MOCK_EMIS as INITIAL_EMIS } from '../../utils/mockData';
 
 export default function PaymentPanel() {
   const role = useAuthStore(state => state.role);
   const addNotification = useNotificationStore(state => state.addNotification);
-  const [emis, setEmis] = useState(MOCK_EMIS);
+  const [emis, setEmis] = useState(INITIAL_EMIS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
   const [splittingEmi, setSplittingEmi] = useState(null);
@@ -138,9 +132,8 @@ export default function PaymentPanel() {
       {/* Split EMI Modal */}
       {isSplitModalOpen && splittingEmi && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-md" onClick={() => setIsSplitModalOpen(false)}></div>
-          <div className="bg-white rounded-[2rem] p-8 max-w-2xl w-full relative z-10 shadow-2xl animate-in fade-in zoom-in duration-200 text-left">
-            <div className="flex items-center justify-between mb-8">
+          <div className="bg-white rounded-[2rem] max-h-[90vh] max-w-2xl w-full relative z-10 shadow-2xl animate-in fade-in zoom-in duration-200 text-left flex flex-col overflow-hidden">
+            <div className="p-8 pb-4 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-blue-100 rounded-2xl text-blue-600">
                   <Scissors className="w-6 h-6" />
@@ -187,23 +180,22 @@ export default function PaymentPanel() {
                 </div>
               ))}
             </div>
-
-            <div className="mt-8 flex flex-col gap-4">
+            <div className="p-8 border-t border-gray-100 bg-gray-50/50 shrink-0 space-y-4">
               <button 
                 onClick={handleAddSplit}
-                className="flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-2xl text-sm font-bold text-gray-500 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/30 transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-2xl text-sm font-bold text-gray-500 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all"
               >
                 <Plus className="w-4 h-4" /> Add Another Part
               </button>
               
               <div className="flex items-center justify-between p-4 bg-gray-900 rounded-2xl text-white">
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Total Split Amount</p>
-                  <p className="text-xl font-black">₹{splitInstallments.reduce((sum, inst) => sum + parseFloat(inst.amount || 0), 0).toFixed(2)}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Total Split Amount</p>
+                  <p className="text-xl font-black leading-none">₹{splitInstallments.reduce((sum, inst) => sum + parseFloat(inst.amount || 0), 0).toFixed(2)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Original Amount</p>
-                  <p className="text-lg font-bold opacity-60">₹{splittingEmi.amount}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Original</p>
+                  <p className="text-sm font-bold opacity-60 leading-none tracking-tighter">₹{splittingEmi.amount}</p>
                 </div>
               </div>
 

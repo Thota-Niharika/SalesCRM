@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MOCK_LEADS } from '../../utils/mockData';
-import { Search, Filter, AlertCircle, ChevronRight } from 'lucide-react';
+import { Search, Filter, AlertCircle, ChevronRight, FileSpreadsheet, Upload, X, FileUp, CheckCircle2 } from 'lucide-react';
 import useAuthStore from '../../store/useAuthStore';
 import useNotificationStore from '../../store/useNotificationStore';
 import { formatDistanceToNow } from 'date-fns';
@@ -35,7 +35,11 @@ export default function LeadList() {
   });
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [newLead, setNewLead] = useState({ name: '', email: '', phone: '', course: 'Full Stack Development' });
+  const [bulkData, setBulkData] = useState('');
+  const [uploadedFile, setUploadedFile] = useState(null);
   const [errors, setErrors] = useState({});
   const addNotification = useNotificationStore(state => state.addNotification);
 
@@ -59,15 +63,84 @@ export default function LeadList() {
     setErrors({});
   };
 
+  const handleBulkImport = (e) => {
+    e.preventDefault();
+    if (!bulkData.trim()) {
+      addNotification("Please paste some data first", "error");
+      return;
+    }
+
+    const lines = bulkData.trim().split('\n');
+    let importedCount = 0;
+    let errorCount = 0;
+
+    lines.forEach(line => {
+      // Split by comma, tab, or pipe
+      const parts = line.split(/[,\t|]/).map(p => p.trim());
+      
+      if (parts.length >= 2) {
+        // Simple heuristic: parts[0] is name, parts[1] is email, parts[2] is phone (optional)
+        const name = parts[0];
+        const email = parts[1];
+        const phone = parts[2] || '0000000000';
+
+        if (name && email.includes('@')) {
+          importedCount++;
+          // In a real app, we'd add to DB here
+          console.log(`Importing: ${name} (${email})`);
+        } else {
+          errorCount++;
+        }
+      } else {
+        errorCount++;
+      }
+    });
+
+    if (importedCount > 0) {
+      addNotification(`Successfully imported ${importedCount} leads!`, "success");
+      if (errorCount > 0) {
+        addNotification(`Skipped ${errorCount} invalid lines`, "warning");
+      }
+      setIsBulkModalOpen(false);
+      setBulkData('');
+    } else {
+      addNotification("No valid lead data found to import", "error");
+    }
+  };
+
+  const handleFileDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && (file.name.endsWith('.csv') || file.type === 'text/csv')) {
+      setUploadedFile(file);
+      processFile(file);
+    } else {
+      addNotification("Please upload a valid CSV file", "error");
+    }
+  };
+
+  const processFile = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      setBulkData(text);
+      addNotification(`File "${file.name}" loaded successfully`, "info");
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="space-y-6">
       {/* Add Lead Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsAddModalOpen(false)}></div>
-          <div className="bg-white rounded-3xl p-8 max-w-lg w-full relative z-10 shadow-2xl animate-in fade-in zoom-in duration-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Lead</h2>
-            <form onSubmit={handleAddLead} className="space-y-4">
+          <div className="bg-white rounded-3xl max-h-[90vh] max-w-lg w-full relative z-10 shadow-2xl animate-in fade-in zoom-in duration-200 overflow-hidden flex flex-col">
+            <div className="p-8 pb-4 border-b border-gray-100 shrink-0">
+              <h2 className="text-2xl font-bold text-gray-900">Add New Lead</h2>
+            </div>
+            <form onSubmit={handleAddLead} className="flex-1 overflow-y-auto p-8 pt-6 space-y-4 scrollbar-hide">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                 <input 
@@ -121,17 +194,129 @@ export default function LeadList() {
         </div>
       )}
 
+      {/* Bulk Import Modal */}
+      {isBulkModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsBulkModalOpen(false)}></div>
+          <div className="bg-white rounded-3xl max-h-[90vh] max-w-2xl w-full relative z-10 shadow-2xl animate-in fade-in zoom-in duration-200 overflow-hidden text-left flex flex-col">
+            <div className="p-8 pb-4 border-b border-gray-100 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-indigo-100 rounded-2xl text-indigo-600">
+                    <FileSpreadsheet className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Bulk Import Leads</h2>
+                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Upload or Paste CSV Data</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsBulkModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleBulkImport} className="flex-1 overflow-y-auto p-8 pt-6 space-y-6 scrollbar-hide">
+              <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4">
+                <h4 className="text-xs font-bold text-blue-700 uppercase tracking-widest mb-2">Instructions</h4>
+                <p className="text-xs text-blue-600 leading-relaxed">
+                  Upload a CSV file or paste lead data. Format: <code className="bg-blue-100 px-1 rounded font-bold">Name, Email, Phone</code>. 
+                </p>
+              </div>
+
+              {!uploadedFile ? (
+                <div 
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={handleFileDrop}
+                  className={cn(
+                    "relative group h-48 border-2 border-dashed rounded-3xl flex flex-col items-center justify-center transition-all duration-300",
+                    isDragging ? "border-indigo-500 bg-indigo-50 scale-[1.02]" : "border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-gray-100/50"
+                  )}
+                >
+                  <div className={cn(
+                    "p-4 rounded-2xl transition-all duration-300",
+                    isDragging ? "bg-indigo-100 text-indigo-600 scale-110" : "bg-white text-gray-400 group-hover:scale-110 shadow-sm"
+                  )}>
+                    <FileUp className="w-8 h-8" />
+                  </div>
+                  <div className="mt-4 text-center">
+                    <p className="text-sm font-bold text-gray-900">Click to upload or drag & drop</p>
+                    <p className="text-xs text-gray-500 mt-1 font-medium">CSV files only (e.g. leads_export.csv)</p>
+                  </div>
+                  <input 
+                    type="file" 
+                    accept=".csv"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) { setUploadedFile(file); processFile(file); }
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-5 bg-indigo-50 border border-indigo-100 rounded-2xl animate-in fade-in slide-in-from-top-4 duration-300">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white rounded-xl text-indigo-600 shadow-sm">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{uploadedFile.name}</p>
+                      <p className="text-xs text-indigo-600 font-medium">{(uploadedFile.size / 1024).toFixed(1)} KB • Ready to import</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => { setUploadedFile(null); setBulkData(''); }}
+                    className="p-2 hover:bg-indigo-100 text-indigo-400 hover:text-indigo-600 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                  <span className="text-[100px] font-black tracking-tighter select-none">PREVIEW</span>
+                </div>
+                <textarea 
+                  required
+                  value={bulkData}
+                  onChange={e => setBulkData(e.target.value)}
+                  placeholder="Review parsed data here..."
+                  className="w-full h-48 px-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 resize-none font-mono text-xs leading-relaxed"
+                />
+              </div>
+
+              <div className="flex gap-4 mt-2">
+                <button type="button" onClick={() => setIsBulkModalOpen(false)} className="flex-1 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 rounded-xl transition-colors">Cancel</button>
+                <button type="submit" className="flex-1 py-3 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                  <Upload className="w-4 h-4" /> Import All Leads
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Leads Management</h1>
           <p className="text-sm text-gray-500 mt-1">Manage and track your admissions pipeline.</p>
         </div>
-        <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm active:scale-95"
-        >
-          + Add New Lead
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => setIsBulkModalOpen(true)}
+            className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm active:scale-95 flex items-center gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-indigo-600" /> Bulk Import
+          </button>
+          <button 
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm active:scale-95"
+          >
+            + Add New Lead
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row gap-4">
